@@ -4,6 +4,7 @@
 }
 
 .array span{
+  position:relative;
   background-color: blue;
   margin: 20px;
   float: left;

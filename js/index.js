@@ -1,11 +1,14 @@
-const messages = () => console.log('hello')
+let pos = []
+let id = []
+let time = 0
+let cellsize = 0
 
-const animate = (id,x) => {
-  document.getElementById(id).addEventListener('animationend',messages,true)
+const animate = (id,initial,final) => {
+  id = id.toString()
   document.getElementById(id).animate([
         // keyframes
-        { transform: 'translateX('+0+'px)' },
-        { transform: 'translateX('+x+'px)' }
+        { transform: 'translateX('+initial.toString()+'px)' },
+        { transform: 'translateX('+final.toString()+'px)' }
       ], {
         // timing options
         fill: 'forwards',
@@ -14,26 +17,28 @@ const animate = (id,x) => {
       })
 }
 
-const printIndexandValue = (x) => {
-  console.log(x,document.getElementById(x).innerHTML) 
-}
-
 // x goes to right y goes to left
-const swap = (x,y,cellsize) => {
-  printIndexandValue(x)
-  printIndexandValue(y)
+const swapAnimate = (x,y,cellsize,margin) => {
   return new Promise(async (resolve,reject) => {
     try{
-      let margin = 40 // as in stylesheet
-      let distance = Math.abs(x-y)*(cellsize+margin)
-    
-      // animation of swap of x and y
-      animate(x,distance)
-      animate(y,-distance)
+      //get corresponding id
+      let xid = id[x]
+      let yid = id[y]
 
-      //swap id
-      document.getElementById(x).setAttribute("id", '0')
-      document.getElementById(y).setAttribute("id", '1')
+      const dist = (cellsize+margin)*Math.abs(x-y) //calculate distance
+      let xpos = pos[xid]
+      let ypos = pos[yid]
+      animate(xid,xpos,xpos+dist)
+      animate(yid,ypos,ypos-dist)
+
+      //update positions
+      pos[xid] = xpos+dist
+      pos[yid] = ypos-dist
+
+      //swap indices
+      let temp = id[x]
+      id[x] = id[y]
+      id[y] = temp
       resolve()
     }catch(e){
       reject(e)
@@ -42,34 +47,64 @@ const swap = (x,y,cellsize) => {
 }
 
 // sets the size of all the array elements
-const setSize = (size) => {
+const setSize = (size, margin) => {
   var cols = document.getElementById('output').getElementsByTagName('span')
+  let gap = size+margin
   for(i = 0; i < cols.length; i++) {
     cols[i].setAttribute("style","width:"+size.toString()+"px")
+    pos.push(0)
+    id.push(i)
   }
 }
 
-
-function nothing(){
-
-}
 // returns the number of digits
 function getlength(number) {
   return number.toString().length
 }
 
-
-const test = async (no_digits) => {
-  //setTimeout(swapAnimate,0,'2','3',1)
-  //setTimeout(swapAnimate,1000,'0','1',1)
-  setTimeout(swap,0,0,1,no_digits*10)
-  setTimeout(swap,1500,1,0,no_digits*10)
+const swapcaller = (step,x,y) => {
+  if(x<y){
+    setTimeout(swapAnimate,time,x,y,cellsize,40)
+  }
+  else{
+    setTimeout(swapAnimate,time,y,x,cellsize,40)
+  }
+  time = time + step
 }
+
+const swap = (x,y) => {
+  const step = 1500
+  swapcaller(step,x,y)
+}
+
+const sort = (inputArr,callback) => { 
+    let n = inputArr.length;
+        
+    for(let i = 0; i < n; i++) {
+        // Finding the smallest number in the subarray
+        let min = i;
+        for(let j = i+1; j < n; j++){
+            if(inputArr[j] < inputArr[min]) {
+                min=j; 
+            }
+         }
+         if (min != i) {
+             // Swapping the elements
+             let tmp = inputArr[i]; 
+             inputArr[i] = inputArr[min];
+             inputArr[min] = tmp;      
+             swap(i,min)
+             console.log(i,min)
+        }
+    }
+    callback(inputArr)
+}
+
+
 
 const addCellsGetSize = (list) => {
   let currdiv = document.createElement('div') // creating div container of array
   let maxno = Number.NEGATIVE_INFINITY    // store max number to calculate the size of all elements
-
   // create span elements for all array items
   for ( i = 0; i < list.length; i++ ) {
     let sp = document.createElement('span')
@@ -78,7 +113,6 @@ const addCellsGetSize = (list) => {
     // keeping track of maximum number
     if(list[i] > maxno)
       maxno = list[i]
-
     currdiv.appendChild(sp)
   }
 
@@ -124,12 +158,17 @@ const main = async (str) => {
   const list = await parse(str)
   await clearCells()
   const maxdigits = await addCellsGetSize(list)
-  setSize(maxdigits*10)
-  test(maxdigits)
+  cellsize = maxdigits*10
+  setSize(maxdigits*10,40)
+  //sort(list,(sorted)=>console.log(sorted))
+  //console.log('hello')
+  //test(maxdigits)
+  sort(list,(sorted)=>console.log(sorted))
 }
 
 // on click
 document.getElementById('form').onsubmit = function() {
+    console.log('script loaded')
     let input = document.getElementById('ar').value // input from form
     main(input)  // parse and display
     return false
