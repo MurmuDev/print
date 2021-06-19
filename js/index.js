@@ -62,7 +62,7 @@ function getlength(number) {
   return number.toString().length
 }
 
-const swapcaller = (step,x,y) => {
+const swapper = (step,x,y) => {
   if(x<y){
     setTimeout(swapAnimate,time,x,y,cellsize,40)
   }
@@ -72,12 +72,12 @@ const swapcaller = (step,x,y) => {
   time = time + step
 }
 
-const swap = (x,y) => {
+const swapcaller = (x,y) => {
   const step = 1500
-  swapcaller(step,x,y)
+  swapper(step,x,y)
 }
 
-const sort = (inputArr,callback) => { 
+const selectionSort = (inputArr,callback) => { 
     let n = inputArr.length;
         
     for(let i = 0; i < n; i++) {
@@ -93,13 +93,82 @@ const sort = (inputArr,callback) => {
              let tmp = inputArr[i]; 
              inputArr[i] = inputArr[min];
              inputArr[min] = tmp;      
-             swap(i,min)
+             swapcaller(i,min)
              console.log(i,min)
         }
     }
     callback(inputArr)
 }
 
+const quickSort = (inputArr,callback) => {
+    let swappedIndices = [] 
+    const partition = (arr, start, end) => {
+      // Taking the last element as the pivot
+      const pivotValue = arr[end]
+      let pivotIndex = start 
+      for (let i = start; i < end; i++) {
+          if (arr[i] < pivotValue) {
+
+          // Swapping elements
+          let temp = arr[pivotIndex]
+          arr[pivotIndex] = arr[i]
+          arr[i] = temp
+          
+          swappedIndices.push([i,pivotIndex])
+          // Moving to next element
+          pivotIndex++
+          }
+    }
+    
+        // Putting the pivot value in the middle
+        swappedIndices.push([pivotIndex,end])
+        
+        // Swapping elements
+        let temp = arr[pivotIndex]
+        arr[pivotIndex] = arr[end]
+        arr[end] = temp
+
+      return pivotIndex;
+    }
+
+  const quick = (arr) => {
+    // Creating an array that we'll use as a stack, using the push() and pop() functions
+    stack = [];
+    
+    // Adding the entire initial array as an "unsorted subarray"
+    stack.push(0);
+    stack.push(arr.length - 1);
+    
+    // There isn't an explicit peek() function
+    // The loop repeats as long as we have unsorted subarrays
+    while(stack[stack.length - 1] >= 0){
+        
+        // Extracting the top unsorted subarray
+    	end = stack.pop();
+        start = stack.pop();
+        
+        pivotIndex = partition(arr, start, end);
+        
+        // If there are unsorted elements to the "left" of the pivot,
+        // we add that subarray to the stack so we can sort it later
+        if (pivotIndex - 1 > start){
+        	stack.push(start);
+            stack.push(pivotIndex - 1);
+		}
+        
+        // If there are unsorted elements to the "right" of the pivot,
+        // we add that subarray to the stack so we can sort it later
+        if (pivotIndex + 1 < end){
+        	stack.push(pivotIndex + 1);
+            stack.push(end);
+        }
+    }
+    return arr
+}
+  const sorted = quick(inputArr,0,inputArr.length)
+  
+  callback(swappedIndices)
+} 
 
 
 const addCellsGetSize = (list) => {
@@ -154,7 +223,7 @@ const clearCells = () => {
   
 }
 
-const main = async (str) => {
+const main = async (str,callback) => {
   const list = await parse(str)
   await clearCells()
   const maxdigits = await addCellsGetSize(list)
@@ -163,14 +232,33 @@ const main = async (str) => {
   //sort(list,(sorted)=>console.log(sorted))
   //console.log('hello')
   //test(maxdigits)
-  sort(list,(sorted)=>console.log(sorted))
+  callback(list)
 }
 
-// on click
-document.getElementById('form').onsubmit = function() {
+// on click selection sort
+document.getElementById('selection_sort').onclick = function() {
     console.log('script loaded')
     let input = document.getElementById('ar').value // input from form
-    main(input)  // parse and display
+  main(input,(arr) =>{
+    selectionSort(arr,(arr)=> console.log(arr))
+  }) // parse and display
+    return false
+}
+
+// on click quick sort
+document.getElementById('quick_sort').onclick = function() {
+    console.log('script loaded')
+    let input = document.getElementById('ar').value // input from form
+  main(input,(arr)=>{
+    quickSort(arr,(swappedIndices)=>{
+      for(indices of swappedIndices){
+        //console.log(indices[0],indices[1])
+        if(indices[0] == indices[1])
+          continue
+        swapcaller(indices[0],indices[1])
+      }
+    })
+  })
     return false
 }
 
